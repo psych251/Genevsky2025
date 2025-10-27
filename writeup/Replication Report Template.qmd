@@ -1,6 +1,6 @@
 ---
-title: "Replication of Study X by Sample & Sample (20xx, Psychological Science)"
-author: "Replication Author[s] (contact information)"
+title: "Replication of Study affective congruence & donation by Genevsky et al. (2025, Social Cognitive and Affective Neuroscience)"
+author: "Cynthia Wu"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 format:
   html:
@@ -19,11 +19,12 @@ I chose to replicate Experiment 1a from Genevsky et al. (2025) because it direct
 
 ### Power Analysis
 
-Original effect size, power analysis for samples to achieve 80%, 90%, 95% power to detect that effect size.  Considerations of feasibility for selecting planned sample size.
+Original effect size and power considerations were estimated based on the reported results from Experiment 1a. Because the original data are not publicly available, we used the reported paired mean difference ($M_{congruent} - M_{incongruent} = 0.425$) sample size ($n=56$), and t-values to estimate Cohen’s d, which was found to range approximately from 0.27 to 0.38. Using this estimated effect size, we conducted a power analysis to determine the required sample sizes to achieve $80\%$, $90\%$, and $95\%$ power for detecting the effect. The resulting sample size requirements are illustrated in Figure 1. For conservative planning, at least 110 participants would be needed to achieve $80\%$ power at the lower bound of the effect size ($d = 0.27$). The original experiment, with $56$ participants, would only achieve $80\%$ power if the effect size were at the upper bound ($d > 0.37$).
 
 ### Planned Sample
 
-Planned sample size and/or termination rule, sampling frame, known demographics if any, preselection rules if any.
+The planned sample size was determined based on a power analysis using the estimated effect size from Experiment 1a ($d ≈ 0.27–0.38$). To achieve $80\%$ power at the lower bound of the effect size ($d = 0.27$), a conservative sample of at least 110 participants is required (can be more liberal with funding constraint).
+Participants will be recruited from Prolific and will be adults aged 18–60 years, fluent in English. No additional preselection criteria will be applied based on prior experience or other characteristics, and no demographic information will be collected or used for inclusion or exclusion.
 
 ### Materials
 
@@ -35,13 +36,13 @@ Participants will receive a \$10 endowment at the beginning of the session and c
 
 ### Analysis Plan
 
-Can also quote directly, though it is less often spelled out effectively for an analysis strategy section.  The key is to report an analysis strategy that is as close to the original - data cleaning rules, data exclusion rules, covariates, etc. - as possible.  
-
-**Clarify key analysis of interest here**  You can also pre-specify additional analyses you plan to do.
+The analysis strategy closely follows the original study. Data cleaning, exclusion rules, and modeling choices are reported as faithfully as possible. Trials with missing responses will be removed according to the original criteria. The main analysis focuses on the interactive effect of affective congruence on donation amount, using hierarchical mixed-effects regression models that include random effects of subject-level intercepts. Fixed effects include image valence, message valence, and their interaction.
+While the primary statistical inference is conducted using hierarchical mixed-effects regression, group-level averages for congruent versus incongruent trials were visualized in the original study. For descriptive purposes, an independent-samples t-test will be conducted comparing congruent and incongruent affective trials.
 
 ### Differences from Original Study
 
-Explicitly describe known differences in sample, setting, procedure, and analysis plan from original study.  The goal, of course, is to minimize those differences, but differences will inevitably occur.  Also, note whether such differences are anticipated to make a difference based on claims in the original article or subsequent published research on the conditions for obtaining the effect.
+While the current study closely follows the original experiment, several differences are worth noting. First, the sample was recruited from Prolific, whereas the original study recruited university students in a laboratory setting. Second, the study was conducted online rather than in-person, which may influence participants’ engagement or environmental control. Third, the choice-making duration was increased from 1 second to 2 seconds to account for potentially lower attention and slower responses among online participants. 
+These differences are not expected to substantially affect the primary effect of affective congruence on donation amount, as prior research indicates that the effect is robust across different adult populations and experimental settings. The increased response window is anticipated to facilitate task performance without altering the underlying effect.
 
 ### Methods Addendum (Post Data Collection)
 
@@ -63,14 +64,36 @@ Data preparation following the analysis plan.
 	
 ```{r include=F}
 ### Data Preparation
-
 #### Load Relevant Libraries and Functions
-
+library(tidyverse)
+library(lme4)
+library(lmerTest)
 #### Import data
-
+df <- read_csv("../data/pilot_data.csv", show_col_types = FALSE)
 #### Data exclusion / filtering
+df_count <- df %>% 
+  group_by(participant) %>%
+  summarise(n_trial=n()) %>%
+  ungroup()
 
+ppt_list <- df_count %>%
+  filter(n_trial > 48) %>%
+  pull(participant)
+
+df_count_filtered <- df_count %>%
+  filter(participant %in% ppt_list)
 #### Prepare data for analysis - create columns etc.
+df_count_filtered <- df_count_filtered %>%
+  mutate(donation_level = ifelse(scale_flip == 0, exp_DonateScale.response, 6 - exp_DonateScale_flip.response),
+           donation = case_when(donation_level == 1 ~ 0,
+                                donation_level == 2 ~ 2,
+                                donation_level == 3 ~ 6,
+                                donation_level == 4 ~ 8,
+                                donation_level == 5 ~ 10),
+           aff_pair = paste0(img_aff, "-", mes_aff),
+           congruency = ifelse(img_aff == mes_aff, "Congruent", "Uncongruent")) %>%
+    select(participant, order, donation, img_aff, mes_aff, aff_pair, congruency) %>%
+    arrange(order)
 ```
 
 ### Confirmatory analysis
