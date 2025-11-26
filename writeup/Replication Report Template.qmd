@@ -19,20 +19,61 @@ I chose to replicate Experiment 1a from Genevsky et al. (2025) because it direct
 
 ### Power Analysis
 
-Original effect size and power considerations were estimated based on the reported results from Experiment 1a. Because the original data are not publicly available, we used the reported paired mean difference ($M_{congruent} - M_{incongruent} = 0.425$) sample size ($n=56$), and t-values to estimate Cohen’s d, which was found to range approximately from 0.27 to 0.38. Using this estimated effect size, we conducted a power analysis to determine the required sample sizes to achieve $80\%$, $90\%$, and $95\%$ power for detecting the effect. The resulting sample size requirements are illustrated in Figure 1. For conservative planning, at least 110 participants would be needed to achieve $80\%$ power at the lower bound of the effect size ($d = 0.27$). The original experiment, with $56$ participants, would only achieve $80\%$ power if the effect size were at the upper bound ($d > 0.37$).
+Original effect size and power considerations were estimated based on the reported results from Experiment 1a. Because the original data are not publicly available, we used the reported paired mean difference ($M_{congruent} - M_{incongruent} = 0.425$) sample size ($n=56$), and t-values to estimate Cohen’s d, which was found to range approximately from 0.47 to 0.52. Using this estimated effect size, we conducted a power analysis to determine the required sample sizes to achieve $80\%$, $90\%$, and $95\%$ power for detecting the effect. The resulting sample size requirements are illustrated in Figure 1. For conservative planning, at least 110 participants would be needed to achieve $80\%$ power at the lower bound of the effect size ($d = 0.27$). The original experiment, with $56$ participants, would only achieve $80\%$ power if the effect size were at the upper bound ($d > 0.37$).
+
+```{r}
+library(pwr)
+library(tidyverse)
+dz_values <- seq(0.47, 0.52, by = 0.01)
+
+n_80 <- sapply(dz_values, function(d) ceiling(pwr.t.test(d=d, power=0.8, type="paired", alternative="two.sided")$n))
+n_90 <- sapply(dz_values, function(d) ceiling(pwr.t.test(d=d, power=0.9, type="paired", alternative="two.sided")$n))
+n_95 <- sapply(dz_values, function(d) ceiling(pwr.t.test(d=d, power=0.95, type="paired", alternative="two.sided")$n))
+
+df <- data.frame(
+  dz = dz_values,
+  n_80 = n_80,
+  n_90 = n_90,
+  n_95 = n_95
+)
+
+df_long <- pivot_longer(df, cols = c(`n_80`, n_90, n_95),
+                        names_to = "Power", values_to = "SampleSize")
+
+p1 <- ggplot(df_long, aes(x=dz, y=SampleSize, color=Power, linetype=Power)) +
+  geom_line(size=1.2) +
+  geom_hline(yintercept=56, color="black", linetype="dashed", size=1) +
+  annotate("text", x=0.47, y=57, label="orignal n=56", color="black", hjust=0, vjust = -1.2) +
+  scale_color_manual(values=c("n_80"="#F6A6B2", 
+                              "n_90"="#FFE066",  
+                              "n_95"="#6CA0DC"), 
+                     labels=c("80% power","90% power","95% power")) +
+  scale_linetype_manual(values=c("solid","dashed","dotted"),
+                        labels=c("80% power","90% power","95% power")) +
+  labs(title="Required Sample Size vs Cohen's d",
+       x="Cohen's d",
+       y="Required Sample Size",
+       color="Power Level",
+       linetype="Power Level") +
+  theme_minimal(base_size = 14)
+
+ggsave(filename = "fig1.png", plot = p1, width = 9, height = 5)
+```
+
+![Fig 1. Power analysis with estimated effect size given statistics from original study](fig1.png)
 
 ### Planned Sample
 
-The planned sample size was determined based on a power analysis using the estimated effect size from Experiment 1a ($d ≈ 0.27–0.38$). To achieve $80\%$ power at the lower bound of the effect size ($d = 0.27$), a conservative sample of at least 110 participants is required (can be more liberal with funding constraint).
+The planned sample size was determined based on a power analysis using the estimated effect size from Experiment 1a ($d ≈ 0.47–0.52$). To achieve $90\%$ power at the lower bound of the effect size ($d = 0.47$), a conservative sample of at least 50 participants is required (can be more liberal with funding constraint).
 Participants will be recruited from Prolific and will be adults aged 18–60 years, fluent in English. No additional preselection criteria will be applied based on prior experience or other characteristics, and no demographic information will be collected or used for inclusion or exclusion.
 
 ### Materials
 
-The experiment will use the original image and message stimuli from Genevsky et al. (2025). The image set consists of photographs depicting individuals in need who display either happy or sad facial expressions, representing the manipulation of image valence. Each image is paired with a brief aid message that is either positively or negatively framed, creating a 2 × 2 within-subjects factorial design that varies affective congruence between the two affective features. Stimuli will be presented on a computer screen using a program that allows participants to indicate their donation decision with a slider bar ranging from \$0.00 to \$10.00. Additional materials include task instructions, comprehension checks, demographic questions, and post-task self-reports of emotional responses.
+The experiment will use the original image and message stimuli from Genevsky et al. (2025), which will be conducted through Pavlovia (https://run.pavlovia.org/cwu0701/genevsky2025_psych251). The image set consists of photographs depicting individuals in need who display either happy or sad facial expressions, representing the manipulation of image valence. Each image is paired with a brief aid message that is either positively or negatively framed, creating a 2 × 2 within-subjects factorial design that varies affective congruence between the two affective features. Stimuli will be presented on a computer screen using a program that allows participants to indicate their donation decision with a slider bar ranging from \$0.00 to \$10.00. Additional materials include task instructions, comprehension checks, demographic questions, and post-task self-reports of emotional responses.
 
 ### Procedure	
 
-Participants will receive a \$10 endowment at the beginning of the session and complete 48 trials organized in a counterbalanced block design. On each trial, participants will view one image–message pair and decide how much of their endowment to donate using the slider. Each decision will be recorded as the dollar amount donated, along with response time and stimulus identifiers. Trial order within blocks will be randomized to minimize order and carryover effects. At the end of the session, one trial will be randomly selected to determine the participant’s real payout: if a donation was made on that trial, the chosen amount will be deducted from their endowment and donated to the corresponding cause; otherwise, the participant will retain the full \$10. Finally, participants will complete brief demographic and manipulation-check questionnaires assessing perceived emotional tone of the stimuli.
+Participants will receive a \$6 endowment at the beginning of the session and complete 48 trials organized in a counterbalanced block design. On each trial, participants will view one image–message pair and decide how much of their endowment to donate using the slider. Each decision will be recorded as the dollar amount donated, along with response time and stimulus identifiers. Trial order within blocks will be randomized to minimize order and carryover effects. At the end of the session, one trial will be randomly selected to determine the participant’s real payout: if a donation was made on that trial, the chosen amount will be deducted from their endowment and donated to the corresponding cause; otherwise, the participant will retain the full \$6. Finally, participants will complete brief demographic and manipulation-check questionnaires assessing perceived emotional tone of the stimuli.
 
 ### Analysis Plan
 
@@ -41,7 +82,7 @@ While the primary statistical inference is conducted using hierarchical mixed-ef
 
 ### Differences from Original Study
 
-While the current study closely follows the original experiment, several differences are worth noting. First, the sample was recruited from Prolific, whereas the original study recruited university students in a laboratory setting. Second, the study was conducted online rather than in-person, which may influence participants’ engagement or environmental control. Third, the choice-making duration was increased from 1 second to 2 seconds to account for potentially lower attention and slower responses among online participants. 
+While the current study closely follows the original experiment, several differences are worth noting. First, the sample was recruited from Prolific, whereas the original study recruited university students in a laboratory setting. Second, the study was conducted online rather than in-person, which may influence participants’ engagement or environmental control. Third, the choice-making duration was increased from 1 second to 2 seconds to account for potentially lower attention and slower responses among online participants. Fourth, the endowment provided to participants was less comparing to the original study (\$6 in the current study and \$10 in the original study) due to budget constraints.
 These differences are not expected to substantially affect the primary effect of affective congruence on donation amount, as prior research indicates that the effect is robust across different adult populations and experimental settings. The increased response window is anticipated to facilitate task performance without altering the underlying effect.
 
 ### Methods Addendum (Post Data Collection)
@@ -77,13 +118,13 @@ df_count <- df %>%
   ungroup()
 
 ppt_list <- df_count %>%
-  filter(n_trial > 48) %>%
+  filter(n_trial == 48) %>%
   pull(participant)
 
-df_count_filtered <- df_count %>%
+df_filtered <- df %>%
   filter(participant %in% ppt_list)
 #### Prepare data for analysis - create columns etc.
-df_count_filtered <- df_count_filtered %>%
+df_filtered <- df_filtered %>%
   mutate(donation_level = ifelse(scale_flip == 0, exp_DonateScale.response, 6 - exp_DonateScale_flip.response),
            donation = case_when(donation_level == 1 ~ 0,
                                 donation_level == 2 ~ 2,
@@ -91,15 +132,77 @@ df_count_filtered <- df_count_filtered %>%
                                 donation_level == 4 ~ 8,
                                 donation_level == 5 ~ 10),
            aff_pair = paste0(img_aff, "-", mes_aff),
-           congruency = ifelse(img_aff == mes_aff, "Congruent", "Uncongruent")) %>%
+           congruency = ifelse(img_aff == mes_aff, "Congruent", "Incongruent")) %>%
     select(participant, order, donation, img_aff, mes_aff, aff_pair, congruency) %>%
     arrange(order)
 ```
 
 ### Confirmatory analysis
 
-The analyses as specified in the analysis plan.  
+```{r}
+library(ggplot2)
+library(ggsignif)
+summary(lm(donation ~ img_aff * mes_aff, df_filtered))
+t_res <- t.test(df_filtered %>% filter(congruency == "Congruent") %>% select(donation),
+                df_filtered %>% filter(congruency != "Congruent") %>% select(donation))
 
+df_summary <- df_filtered %>%
+  group_by(congruency) %>%
+  summarise(
+    mean_donation = mean(donation, na.rm = TRUE),
+    se_donation = sd(donation, na.rm = TRUE)/sqrt(n())
+  )
+
+p2 <- ggplot(df_summary, aes(x=congruency, y=mean_donation, fill=congruency)) +
+  geom_bar(stat="identity", width=0.6, color="black") +
+  geom_errorbar(aes(ymin=mean_donation - se_donation,
+                    ymax=mean_donation + se_donation), 
+                width=0.2, size=0.8) +
+  scale_fill_manual(values=c("Congruent"="#F6A6B2", "Incongruent"="gray80")) +
+  geom_signif(
+    comparisons = list(c("Congruent", "Incongruent")),
+    annotations = ifelse(t_res$p.value < 0.001, "***",
+                         ifelse(t_res$p.value < 0.01, "**",
+                                ifelse(t_res$p.value < 0.05, "*", "ns"))),
+    y_position = max(df_summary$mean_donation + df_summary$se_donation) + 0.5
+  ) +
+  labs(title="Average Donation by Affective Congruency",
+       x="Congruency",
+       y="Mean Donation") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+ggsave(filename = "fig2.png", plot = p2, width = 6, height = 5)
+
+df_summary <- df_filtered %>%
+  group_by(img_aff, mes_aff) %>%
+  summarise(
+    mean_donation = mean(donation, na.rm = TRUE),
+    se_donation = sd(donation, na.rm = TRUE)/sqrt(n())
+  ) %>%
+  ungroup()
+
+p3 <- ggplot(df_summary, aes(x=mes_aff, y=mean_donation, fill=mes_aff)) +
+  geom_bar(stat="identity", color="black", width=0.6) +
+  geom_errorbar(aes(ymin=mean_donation - se_donation,
+                    ymax=mean_donation + se_donation),
+                width=0.2, size=0.8) +
+  facet_wrap(~img_aff) +  # separate panels for image valence
+  scale_fill_manual(values=c("p"="#F6A6B2", "n"="#6CA0DC")) +
+  labs(title="Average Donation by Image and Message Valence",
+       x="Message Valence",
+       y="Mean Donation",
+       fill="Message Valence") +
+  theme_minimal(base_size = 14)
+
+ggsave(filename = "fig3.png", plot = p3, width = 8, height = 5)
+```
+
+![Fig 3. Average donation amount of each condition in the replication study](fig3.png)
+![Fig 2. Average donation amount of affective congruency group in the replication study](fig2.png)
+
+
+The analyses as specified in the analysis plan.  
 *Side-by-side graph with original graph is ideal here*
 
 ### Exploratory analyses
